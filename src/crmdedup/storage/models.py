@@ -56,7 +56,10 @@ class MergeLog(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     entity_type: Mapped[str] = mapped_column(String(20), index=True)
     group_key: Mapped[str] = mapped_column(String(320))
-    primary_record_id: Mapped[int | None] = mapped_column(nullable=True)
+    # CRM record id, not a local table PK — opaque string (the sandbox
+    # backend uses ids like "org-1"; Pipedrive's are numeric-looking but
+    # still handled as strings throughout CRMClient) rather than int.
+    primary_record_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
     absorbed_record_ids: Mapped[str] = mapped_column(Text, default="")
     primary_score: Mapped[int | None] = mapped_column(nullable=True)
     dry_run: Mapped[bool] = mapped_column(Boolean, default=True)
