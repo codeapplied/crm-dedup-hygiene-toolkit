@@ -16,4 +16,12 @@ def init_db(engine: Engine) -> None:
 
 
 def get_session_factory(engine: Engine) -> sessionmaker[Session]:
-    return sessionmaker(bind=engine)
+    # expire_on_commit=False: the CLI pattern throughout this app queries or
+    # commits inside a `with session_factory() as session:` block, then
+    # reads the resulting objects' attributes *after* that block exits to
+    # build a Rich table — the default expire-on-commit would mark every
+    # attribute stale post-commit and try to reload from the now-closed
+    # session, raising DetachedInstanceError. Caught by running the CLI
+    # end-to-end, not just the test suite (which happened to read
+    # attributes while still inside the session in every test).
+    return sessionmaker(bind=engine, expire_on_commit=False)
