@@ -61,30 +61,41 @@ def rules() -> None:
 
 
 @app.command()
-def discover() -> None:
+def discover(
+    execute: bool = typer.Option(False, "--execute", help="Actually perform each planned merge. Default is dry-run: plan and print only, nothing written to the CRM."),
+) -> None:
     """Find duplicate groups (organizations by domain, contacts by email).
-    Always a dry run — no merge is executed by this command."""
+    Dry run by default — pass --execute to actually merge."""
     engine = get_engine(settings.db_path)
     init_db(engine)
     session_factory = get_session_factory(engine)
     client = get_crm_client(settings)
     r = load_rules()
 
+    if execute:
+        console.print("[bold red]--execute passed: merges will actually be performed.[/bold red]")
+
     with session_factory() as session:
-        logs = run_discover(client, session, r)
+        logs = run_discover(client, session, r, execute=execute)
 
     if not logs:
         console.print(f"[yellow]No duplicate groups found ({client.name} backend).[/yellow]")
         raise typer.Exit()
 
-    table = Table(title=f"Duplicate Groups Found — {client.name} backend (dry run)")
-    for column in ("Entity", "Key", "Primary", "Absorbed", "Score"):
+    mode = "EXECUTED" if execute else "dry run"
+    table = Table(title=f"Duplicate Groups — {client.name} backend ({mode})")
+    for column in ("Entity", "Key", "Primary", "Absorbed", "Score", "Status"):
         table.add_column(column)
     for log in logs:
         absorbed_count = len([x for x in log.absorbed_record_ids.split(",") if x])
-        table.add_row(log.entity_type, log.group_key, log.primary_record_id, str(absorbed_count), str(log.primary_score))
+        table.add_row(
+            log.entity_type, log.group_key, log.primary_record_id, str(absorbed_count), str(log.primary_score), log.status
+        )
     console.print(table)
-    console.print(f"[green]{len(logs)} duplicate group(s) found — dry run, no merges executed.[/green]")
+    if execute:
+        console.print(f"[green]{len(logs)} duplicate group(s) processed.[/green]")
+    else:
+        console.print(f"[green]{len(logs)} duplicate group(s) found — dry run, no merges executed.[/green]")
 
 
 if __name__ == "__main__":
