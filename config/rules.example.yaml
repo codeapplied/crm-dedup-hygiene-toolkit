@@ -1,0 +1,18 @@
+# Copy this file to config/rules.yaml and configure your own values.
+#
+# score_weights control how the "primary" record is chosen when merging a
+# duplicate group — a weighted sum of each candidate's linked-record counts.
+# Higher weight = more influence on which record survives the merge. The
+# values below are a placeholder starting point, not a recommendation.
+score_weights:
+  linked_contacts: 3
+  linked_deals: 3
+  notes: 1
+  open_activities: 2
+
+# skip_pairs: known false positives that would otherwise match on the dedup
+# key (shared mailbox, ambiguous same-email/different-person pairs, a known
+# name mismatch) but are NOT true duplicates. Each entry is a pair of record
+# identifiers plus a one-line reason. Expected to grow from real false
+# positives observed during use — not meant to be exhaustive on day one.
+skip_pairs: []
